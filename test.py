@@ -17,8 +17,10 @@ from src.generate_patches import CropImage
 from src.utility import parse_model_name
 warnings.filterwarnings('ignore')
 
-
-SAMPLE_IMAGE_PATH = "./images/sample/"
+# Define base directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SAMPLE_IMAGE_PATH = os.path.join(BASE_DIR, "images", "sample")
+DEFAULT_MODEL_DIR = os.path.join(BASE_DIR, "resources", "anti_spoof_models")
 
 
 # 因为安卓端APK获取的视频流宽高比为3:4,为了与之一致，所以将宽高比限制为3:4
@@ -34,7 +36,11 @@ def check_image(image):
 def test(image_name, model_dir, device_id):
     model_test = AntiSpoofPredict(device_id)
     image_cropper = CropImage()
-    image = cv2.imread(SAMPLE_IMAGE_PATH + image_name)
+    image_path = os.path.join(SAMPLE_IMAGE_PATH, image_name)
+    image = cv2.imread(image_path)
+    if image is None:
+        print(f"Error: Could not read image at path: {image_path}")
+        return
     result = check_image(image)
     if result is False:
         return
@@ -84,7 +90,8 @@ def test(image_name, model_dir, device_id):
 
     format_ = os.path.splitext(image_name)[-1]
     result_image_name = image_name.replace(format_, "_result" + format_)
-    cv2.imwrite(SAMPLE_IMAGE_PATH + result_image_name, image)
+    output_path = os.path.join(SAMPLE_IMAGE_PATH, result_image_name)
+    cv2.imwrite(output_path, image)
 
 
 if __name__ == "__main__":
@@ -98,12 +105,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_dir",
         type=str,
-        default="./resources/anti_spoof_models",
+        default=DEFAULT_MODEL_DIR,
         help="model_lib used to test")
     parser.add_argument(
         "--image_name",
         type=str,
-        default="image_F1.jpg",
+        default="cropped.jpg",
         help="image used to test")
     args = parser.parse_args()
     test(args.image_name, args.model_dir, args.device_id)
+    
